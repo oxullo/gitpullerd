@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    payload_handler = lambda v: None
+
     def log_message(self, format, *args):
         logger.info(format % args)
 
@@ -30,11 +32,22 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(400)
             return
 
-        self.send_response(200)
+        try:
+            self.payload_handler(payload)
+        except Exception, e:
+            logger.error('Error while calling payload handler: %s' % str(e))
+            self.send_response(500)
+        else:
+            self.send_response(200)
+
 
 def create_server(address='0.0.0.0', port=8888):
     logger.info('Creating HTTPServer instance on %s:%d' % (address, port))
     return BaseHTTPServer.HTTPServer((address, port), WebHookReqHandler)
+
+def set_payload_handler(handler):
+    WebHookReqHandler.payload_handler = handler
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
