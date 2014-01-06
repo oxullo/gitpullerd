@@ -65,9 +65,23 @@ class App(object):
 
     def __process_payload(self, payload):
         logger.debug('Payload: %s' % payload)
-        logger.info('Pulling repo')
-        self.__repo.git.pull()
-        logger.info('Pull terminated')
+        if not 'repository' in payload and not 'url' in payload['repository']:
+            logger.error('Invalid payload, ignoring')
+            return
+
+        if (self.__cfg['payload_match_url']
+                and payload['repository']['url'].lower() !=
+                        self.__cfg['payload_match_url'].lower()):
+            logger.warning('Payload url matching failed (wanted=%s got=%s), ignoring' %
+                    (self.__cfg['payload_match_url'], payload['repository']['url']))
+            return
+
+        if self.__cfg['payload_match_ref'] == payload['ref']:
+            logger.info('Pulling repo')
+            self.__repo.git.pull()
+            logger.info('Pull terminated')
+        else:
+            logger.info('Ignoring request (ref=%s)' % payload['ref'])
 
 
 if __name__ == '__main__':
