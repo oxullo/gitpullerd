@@ -4,6 +4,7 @@
 import json
 import urlparse
 import logging
+import thread
 import BaseHTTPServer
 
 logger = logging.getLogger(__name__)
@@ -11,11 +12,20 @@ logger = logging.getLogger(__name__)
 
 class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     payload_handler = lambda v: None
+    whitelist = None
 
     def log_message(self, format, *args):
         logger.info(format % args)
 
     def do_POST(self):
+        logger.info('Processing POST request from %s' % str(self.client_address))
+
+        if self.whitelist and self.client_address[0] not in self.whitelist:
+            logger.warning('Access denied to client address %s' %
+                    str(self.client_address))
+            self.send_response(403)
+            return
+
         body = self.rfile.read(int(self.headers.getheader('content-length')))
         post_data = urlparse.parse_qs(body)
 
@@ -41,12 +51,20 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
 
 
+class AsyncHTTPServer(BaseHTTPServer.HTTPServer):
+    def serve_forever_async(self):
+        thread.start_new_thread(self.serve_forever, ())
+
+
 def create_server(address='0.0.0.0', port=8888):
     logger.info('Creating HTTPServer instance on %s:%d' % (address, port))
-    return BaseHTTPServer.HTTPServer((address, port), WebHookReqHandler)
+    return AsyncHTTPServer((address, port), WebHookReqHandler)
 
 def set_payload_handler(handler):
     WebHookReqHandler.payload_handler = handler
+
+def set_whitelist(ip_list):
+    WebHookReqHandler.whitelist = ip_list
 
 
 if __name__ == '__main__':
