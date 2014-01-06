@@ -5,6 +5,7 @@ import sys
 import os
 import logging
 import Queue
+import subprocess
 
 import git
 
@@ -78,10 +79,25 @@ class App(object):
 
         if self.__cfg['payload_match_ref'] == payload['ref']:
             logger.info('Pulling repo')
-            self.__repo.git.pull()
-            logger.info('Pull terminated')
+            try:
+                self.__repo.git.pull()
+            except Exception, e:
+                logger.error('Cannot pull: %s' % str(e))
+            else:
+                logger.info('Pull successful')
+                self.__run_action()
         else:
             logger.info('Ignoring request (ref=%s)' % payload['ref'])
+
+    def __run_action(self):
+        if self.__cfg['action_shell']:
+            logger.info('Executing post-pull action')
+            proc = subprocess.Popen(self.__cfg['action_shell'], shell=True)
+            proc.wait()
+            if proc.returncode == 0:
+                logger.info('Action terminated successfully')
+            else:
+                logger.error('Action terminated with return code %d' % proc.returncode)
 
 
 if __name__ == '__main__':
