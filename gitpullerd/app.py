@@ -52,12 +52,12 @@ class App(object):
                 int(self.__cfg['webhook_listen_port']))
         server.set_payload_handler(self.__receive_payload)
 
-        allowed_ips = self.__cfg['webhook_allowed_ips']
-        if allowed_ips:
-            ip_list = [ip.strip() for ip in allowed_ips.split(',')]
-            server.set_allowed_ips(ip_list)
+        allowed_networks = self.__cfg['webhook_allowed_networks']
+        if allowed_networks:
+            ip_list = [ip.strip() for ip in allowed_networks.split(',')]
+            server.set_allowed_networks(ip_list)
         else:
-            logger.fatal('No webhook/allowed_ips defined')
+            logger.fatal('No webhook/allowed_networks defined')
             sys.exit(1)
 
     def __receive_payload(self, payload):

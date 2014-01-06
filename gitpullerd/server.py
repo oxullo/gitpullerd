@@ -7,12 +7,14 @@ import logging
 import thread
 import BaseHTTPServer
 
+import netaddr
+
 logger = logging.getLogger(__name__)
 
 
 class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     payload_handler = lambda v: None
-    allowed_ips = []
+    allowed_networks = []
 
     def log_message(self, format, *args):
         logger.info(format % args)
@@ -20,8 +22,8 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         logger.info('Processing POST request from %s' % str(self.client_address))
 
-        if (self.client_address[0] not in self.allowed_ips
-                and '0.0.0.0' not in self.allowed_ips):
+        source_ip = netaddr.IPAddress(self.client_address[0])
+        if not any([source_ip in network for network in self.allowed_networks]):
             logger.warning('Access denied to client address %s' %
                     str(self.client_address))
             self.send_response(403)
@@ -64,8 +66,9 @@ def create_server(address='0.0.0.0', port=8888):
 def set_payload_handler(handler):
     WebHookReqHandler.payload_handler = handler
 
-def set_allowed_ips(ip_list):
-    WebHookReqHandler.allowed_ips = ip_list
+def set_allowed_networks(ip_list):
+    WebHookReqHandler.allowed_networks = [netaddr.IPNetwork(ip) for ip in ip_list]
+    logger.info('Allowing access to networks: %s' % WebHookReqHandler.allowed_networks)
 
 
 if __name__ == '__main__':
