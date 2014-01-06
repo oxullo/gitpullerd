@@ -45,6 +45,7 @@ class App(object):
                 self.__process_payload(payload)
             except KeyboardInterrupt:
                 logger.info('Terminating')
+                self.__server.shutdown()
                 sys.exit(0)
             except Queue.Empty:
                 pass
