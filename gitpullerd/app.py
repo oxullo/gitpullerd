@@ -15,25 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 class App(object):
-    def __init__(self):
+    def __init__(self, cfg):
+        self.__cfg = cfg
         self.__payload_queue = Queue.Queue()
 
-        try:
-            self.__repo = git.Repo(cfg['target_path'])
-        except git.exc.NoSuchPathError:
-            logger.warning('Target path not a git repo, cloning')
-            self.__repo = git.Repo.clone_from(cfg['source_url'], cfg['target_path'])
+        self.__init_git()
+        self.__repo.git.checkout(self.__cfg['target_branch'])
 
-        self.__repo.git.checkout(cfg['target_branch'])
-
-        self.__server = server.create_server(cfg['webhook_listen_ip'],
-                int(cfg['webhook_listen_port']))
-        server.set_payload_handler(self.__receive_payload)
-
-        whitelist = cfg['webhook_allowed_ip_list']
-        if whitelist:
-            ip_list = [ip.strip() for ip in whitelist.split(',')]
-            server.set_whitelist(ip_list)
+        self.__init_server()
 
     def run(self):
         self.__server.serve_forever_async()
@@ -50,6 +39,24 @@ class App(object):
             except Queue.Empty:
                 pass
 
+    def __init_git(self):
+        try:
+            self.__repo = git.Repo(self.__cfg['target_path'])
+        except git.exc.NoSuchPathError:
+            logger.warning('Target path not a git repo, cloning')
+            self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
+                    self.__cfg['target_path'])
+
+    def __init_server(self):
+        self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
+                int(self.__cfg['webhook_listen_port']))
+        server.set_payload_handler(self.__receive_payload)
+
+        whitelist = self.__cfg['webhook_allowed_ip_list']
+        if whitelist:
+            ip_list = [ip.strip() for ip in whitelist.split(',')]
+            server.set_whitelist(ip_list)
+
     def __receive_payload(self, payload):
         self.__payload_queue.put(payload)
 
@@ -62,5 +69,5 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     cfg = config.Config()
     cfg.from_file('../tests/config.ini')
-    app = App()
+    app = App(cfg)
     app.run()
