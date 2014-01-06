@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     payload_handler = lambda v: None
-    whitelist = None
+    allowed_ips = []
 
     def log_message(self, format, *args):
         logger.info(format % args)
@@ -20,7 +20,8 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         logger.info('Processing POST request from %s' % str(self.client_address))
 
-        if self.whitelist and self.client_address[0] not in self.whitelist:
+        if (self.client_address[0] not in self.allowed_ips
+                and '0.0.0.0' not in self.allowed_ips):
             logger.warning('Access denied to client address %s' %
                     str(self.client_address))
             self.send_response(403)
@@ -63,8 +64,8 @@ def create_server(address='0.0.0.0', port=8888):
 def set_payload_handler(handler):
     WebHookReqHandler.payload_handler = handler
 
-def set_whitelist(ip_list):
-    WebHookReqHandler.whitelist = ip_list
+def set_allowed_ips(ip_list):
+    WebHookReqHandler.allowed_ips = ip_list
 
 
 if __name__ == '__main__':

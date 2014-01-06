@@ -52,17 +52,22 @@ class App(object):
                 int(self.__cfg['webhook_listen_port']))
         server.set_payload_handler(self.__receive_payload)
 
-        whitelist = self.__cfg['webhook_allowed_ip_list']
-        if whitelist:
-            ip_list = [ip.strip() for ip in whitelist.split(',')]
-            server.set_whitelist(ip_list)
+        allowed_ips = self.__cfg['webhook_allowed_ips']
+        if allowed_ips:
+            ip_list = [ip.strip() for ip in allowed_ips.split(',')]
+            server.set_allowed_ips(ip_list)
+        else:
+            logger.fatal('No webhook/allowed_ips defined')
+            sys.exit(1)
 
     def __receive_payload(self, payload):
         self.__payload_queue.put(payload)
 
     def __process_payload(self, payload):
         logger.debug('Payload: %s' % payload)
+        logger.info('Pulling repo')
         self.__repo.git.pull()
+        logger.info('Pull terminated')
 
 
 if __name__ == '__main__':
