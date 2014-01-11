@@ -4,6 +4,7 @@
 import sys
 import os
 import logging
+import shutil
 import Queue
 import subprocess
 
@@ -43,8 +44,11 @@ class App(object):
     def __init_git(self):
         try:
             self.__repo = git.Repo(self.__cfg['target_path'])
-        except git.exc.NoSuchPathError:
-            logger.warning('Target path not a git repo, cloning')
+        except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
+            if os.path.exists(self.__cfg['target_path']):
+                shutil.rmtree(self.__cfg['target_path'])
+
+            logger.warning('Target path not a git repo or invalid, cloning')
             self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
                     self.__cfg['target_path'])
 
