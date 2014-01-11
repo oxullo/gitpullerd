@@ -82,7 +82,8 @@ class App(object):
             return
 
         if self.__cfg['payload_match_ref'] == payload['ref']:
-            logger.info('Pulling repo')
+            logger.info('Pulling repo %s (branch=%s)' % (payload['repository']['url'],
+                    self.__cfg['target_branch']))
             try:
                 self.__repo.git.pull()
             except Exception, e:
@@ -95,7 +96,7 @@ class App(object):
 
     def __run_action(self):
         if self.__cfg['action_shell']:
-            logger.info('Executing post-pull action')
+            logger.info('Executing post-pull action: %s' % self.__cfg['action_shell'])
             proc = subprocess.Popen(self.__cfg['action_shell'], shell=True)
             proc.wait()
             if proc.returncode == 0:
