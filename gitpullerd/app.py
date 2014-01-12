@@ -13,11 +13,14 @@ import git
 import server
 import config
 
+import gitpullerd
+
 logger = logging.getLogger(__name__)
 
 
 class App(object):
     def __init__(self, cfg):
+        logger.info('gitpullerd v%s starting up' % gitpullerd.__version__)
         self.__cfg = cfg
         self.__payload_queue = Queue.Queue()
 
@@ -44,6 +47,8 @@ class App(object):
     def __init_git(self):
         try:
             self.__repo = git.Repo(self.__cfg['target_path'])
+            logger.info('Valid git repo found '
+                    'at target path %s' % self.__cfg['target_path'])
         except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
             if os.path.exists(self.__cfg['target_path']):
                 shutil.rmtree(self.__cfg['target_path'])
@@ -51,6 +56,7 @@ class App(object):
             logger.warning('Target path not a git repo or invalid, cloning')
             self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
                     self.__cfg['target_path'])
+            logger.warning('done')
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
