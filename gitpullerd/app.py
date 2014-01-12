@@ -27,6 +27,7 @@ class App(object):
 
         self.__init_git()
         self.__repo.git.checkout(self.__cfg['target_branch'])
+        logger.info('Checked out branch %s' % self.__cfg['target_branch'])
 
         self.__init_server()
 
