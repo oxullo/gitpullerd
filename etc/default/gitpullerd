@@ -1,0 +1,7 @@
+# Options for gitpullerd
+CONFIG=/etc/gitpullerd/gitpullerd.ini
+PIDFILE=/var/run/gitpullerd/gitpullerd.pid
+LOGFILE=/var/log/gitpullerd/gitpullerd.log
+USER=nobody
+GROUP=nogroup
+OPTIONS=

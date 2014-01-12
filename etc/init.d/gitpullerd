@@ -1,0 +1,83 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          gitpullerd
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: git puller daemon
+# Description:       Webhooks-based git repository puller
+### END INIT INFO
+
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="git puller daemon"
+NAME=gitpullerd
+
+GITPULLERD=gitpullerd
+GITPULLERD_BIN=/usr/local/bin/$GITPULLERD
+CONFIG=/etc/gitpullerd/gitpullerd.ini
+PIDFILE=/var/run/gitpullerd/gitpullerd.pid
+LOGFILE=/var/log/gitpullerd/gitpullerd.log
+USER=nobody
+GROUP=nogroup
+OPTIONS=
+
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+# Define LSB log_* functions.
+. /lib/lsb/init-functions
+
+DAEMON=$GITPULLERD_BIN
+DAEMON_ARGS="-c $CONFIG -p $PIDFILE -l $LOGFILE $OPTIONS"
+
+do_start()
+{
+    start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $USER:$GROUP --startas $DAEMON -- $DAEMON_ARGS
+}
+
+do_stop()
+{
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+}
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $DESC" "$GITPULLERD"
+    do_start
+    case "$?" in
+        0) log_end_msg 0 ;;
+        1) log_progress_msg "already started"
+           log_end_msg 0 ;;
+        *) log_end_msg 1 ;;
+    esac
+
+    ;;
+  stop)
+    log_daemon_msg "Stopping $DESC" "$GITPULLERD"
+    do_stop
+    case "$?" in
+        0) log_end_msg 0 ;;
+        1) log_progress_msg "already stopped"
+           log_end_msg 0 ;;
+        *) log_end_msg 1 ;;
+    esac
+
+    ;;
+  restart|force-reload)
+    $0 stop
+    $0 start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE $GITPULLERD_BIN $GITPULLERD && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: $SCRIPTNAME {start|stop|rotate|restart|force-reload|status}" >&2
+    exit 3
+    ;;
+esac
+
+:
