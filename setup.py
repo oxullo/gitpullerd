@@ -3,8 +3,10 @@
 
 from distutils.core import setup
 
+import gitpullerd
+
 setup(name='gitpullerd',
-    version='1.0',
+    version=gitpullerd.__version__,
     packages=['gitpullerd'],
     scripts=['scripts/gitpullerd'],
 )
