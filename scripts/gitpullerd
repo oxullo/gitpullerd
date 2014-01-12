@@ -42,7 +42,7 @@ args = parser.parse_args()
 if not os.path.isfile(args.config):
     fatal('Config file %s does not exist' % args.config)
 
-if not is_writable(args.pidfile):
+if not args.foreground and not is_writable(args.pidfile):
     fatal('Cannot write PID file %s' % args.pidfile)
 
 args.pidfile = os.path.abspath(args.pidfile)
