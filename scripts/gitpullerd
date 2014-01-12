@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import os
+import pwd
+import grp
+import logging
+import argparse
+
+import daemon
+from daemon.pidlockfile import TimeoutPIDLockFile
+
+import gitpullerd
+
+
+def is_writable(file_name):
+    if os.path.exists(file_name):
+        return os.access(file_name, os.W_OK)
+    else:
+        return os.access(os.path.dirname(file_name), os.W_OK)
+
+def fatal(message):
+    print >>sys.stderr, 'ERROR: %s' % message
+    sys.exit(1)
+
+parser = argparse.ArgumentParser(description='git puller daemon')
+parser.add_argument('--config', '-c', metavar='CONFIGFILE', dest='config',
+        default='/etc/gitpullerd/gitpullerd.ini', help='configuration file path')
+parser.add_argument('--pidfile', '-p', metavar='PIDFILE', dest='pidfile',
+        default='/var/run/gitpullerd.pid', help='PID file path')
+parser.add_argument('--logfile', '-l', metavar='LOGFILE', dest='logfile',
+        default=None, help='PID file path')
+parser.add_argument('--debug', '-d', dest='debug', action='store_true',
+        help='run in debug mode')
+parser.add_argument('--foreground', '-f', dest='foreground', action='store_true',
+        help='do not fork the process')
+
+
+args = parser.parse_args()
+
+if not os.path.isfile(args.config):
+    fatal('Config file %s does not exist' % args.config)
+
+if not is_writable(args.pidfile):
+    fatal('Cannot write PID file %s' % args.pidfile)
+
+args.pidfile = os.path.abspath(args.pidfile)
+
+if args.logfile is not None and not is_writable(args.logfile):
+    fatal('Cannot write to log file %s' % args.logfile)
+
+logger = logging.getLogger()
+
+if args.debug:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+
+if args.logfile is not None:
+    handler = logging.FileHandler(args.logfile)
+else:
+    handler = logging.StreamHandler(stream=sys.stderr)
+
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
+cfg = gitpullerd.config.Config()
+cfg.from_file(args.config)
+
+if args.foreground:
+    app = gitpullerd.app.App(cfg)
+    app.run()
+else:
+    daemon_context = daemon.DaemonContext(
+            pidfile=TimeoutPIDLockFile(args.pidfile, 5),
+            files_preserve=[handler.stream])
+
+    with daemon_context:
+        app = gitpullerd.app.App(cfg)
+
+        try:
+            app.run()
+        except Exception, e:
+            import traceback
+            stack = traceback.format_exc()
+            for line in stack.split('\n'):
+                logger.error(line)

@@ -6,4 +6,5 @@ from distutils.core import setup
 setup(name='gitpullerd',
     version='1.0',
     packages=['gitpullerd'],
+    scripts=['scripts/gitpullerd'],
 )
