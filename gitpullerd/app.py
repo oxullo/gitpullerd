@@ -6,7 +6,6 @@ import os
 import logging
 import shutil
 import Queue
-import subprocess
 
 import git
 
@@ -14,6 +13,8 @@ import server
 import config
 
 import gitpullerd
+
+import spawner
 
 logger = logging.getLogger(__name__)
 
@@ -103,9 +104,11 @@ class App(object):
     def __run_action(self):
         if self.__cfg['action_shell']:
             logger.info('Executing post-pull action: %s' % self.__cfg['action_shell'])
-            proc = subprocess.Popen(self.__cfg['action_shell'], shell=True)
-            proc.wait()
-            if proc.returncode == 0:
+
+            spawner_obj = spawner.Spawner(self.__cfg['action_shell'])
+            rc = spawner_obj.execute()
+
+            if rc == 0:
                 logger.info('Action terminated successfully')
             else:
                 logger.error('Action terminated with return code %d' % proc.returncode)
