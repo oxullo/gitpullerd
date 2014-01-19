@@ -112,7 +112,7 @@ class App(object):
             if rc == 0:
                 logger.info('Action terminated successfully')
             else:
-                logger.error('Action terminated with return code %d' % proc.returncode)
+                logger.error('Action terminated with return code %d' % rc)
 
 
 if __name__ == '__main__':
