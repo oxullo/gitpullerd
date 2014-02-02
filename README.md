@@ -13,6 +13,7 @@ gitpullerd has been created to automate staging deployments of a web application
 
 gitpullerd depends on the following python packages:
 
+ * setuptools
  * netaddr ( v0.7.7 https://pypi.python.org/pypi/netaddr/0.7.7 )
  * python-daemon ( v1.5.5 https://pypi.python.org/pypi/python-daemon/1.5.5 )
  * git ( v0.3.2 https://pypi.python.org/pypi/GitPython/0.3.2.RC1 )
