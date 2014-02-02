@@ -12,6 +12,8 @@ import daemon
 from daemon.pidlockfile import TimeoutPIDLockFile
 
 import gitpullerd
+import gitpullerd.config
+import gitpullerd.app
 
 
 def is_writable(file_name):

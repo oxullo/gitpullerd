@@ -20,6 +20,8 @@ gitpullerd depends on the following python packages:
 
 __Note: python-daemon 1.5.5 is incompatible with lockfile 0.9.1__
 
+Git-core must be installed for python git package to work properly.
+
 # Configuration
 
 A sample configuration can be found in _samples/config.ini_
