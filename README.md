@@ -16,6 +16,9 @@ gitpullerd depends on the following python packages:
  * netaddr ( v0.7.7 https://pypi.python.org/pypi/netaddr/0.7.7 )
  * python-daemon ( v1.5.5 https://pypi.python.org/pypi/python-daemon/1.5.5 )
  * git ( v0.3.2 https://pypi.python.org/pypi/GitPython/0.3.2.RC1 )
+ * lockfile ( v0.8 https://pypi.python.org/pypi/lockfile/0.8 )
+
+__Note: python-daemon 1.5.5 is incompatible with lockfile 0.9.1__
 
 # Configuration
 
