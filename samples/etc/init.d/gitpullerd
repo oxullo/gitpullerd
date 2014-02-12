@@ -36,6 +36,9 @@ DAEMON_ARGS="-c $CONFIG -p $PIDFILE -l $LOGFILE $OPTIONS"
 
 do_start()
 {
+    PID_DIR=$(dirname $PIDFILE)
+    [ ! -d $PID_DIR ] && mkdir -p $PID_DIR
+    chown $USER:$GROUP $PID_DIR
     start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $USER:$GROUP --startas $DAEMON -- $DAEMON_ARGS
 }
 
