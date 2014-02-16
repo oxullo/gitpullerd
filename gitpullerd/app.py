@@ -6,6 +6,7 @@ import os
 import logging
 import shutil
 import Queue
+import urllib
 
 import git
 
@@ -47,10 +48,10 @@ class App(object):
                 pass
 
     def __init_git(self):
+        logger.info('Initializing target path: %s' % self.__cfg['target_path'])
         try:
             self.__repo = git.Repo(self.__cfg['target_path'])
-            logger.info('Valid git repo found '
-                    'at target path %s' % self.__cfg['target_path'])
+            logger.info('Valid git repo found')
         except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
             if os.path.exists(self.__cfg['target_path']):
                 shutil.rmtree(self.__cfg['target_path'])
@@ -58,7 +59,6 @@ class App(object):
             logger.warning('Target path not a git repo or invalid, cloning')
             self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
                     self.__cfg['target_path'])
-            logger.warning('done')
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
@@ -92,6 +92,13 @@ class App(object):
         if self.__cfg['payload_match_ref'] == payload['ref']:
             logger.info('Pulling repo %s (branch=%s)' % (payload['repository']['url'],
                     self.__cfg['target_branch']))
+            for commit in payload['commits']:
+                logger.info('  %s [%s..] (%s): %s' % (
+                        commit['timestamp'],
+                        commit['id'][:12],
+                        commit['committer']['username'],
+                        urllib.unquote_plus(commit['message'])))
+
             try:
                 self.__repo.git.pull()
             except Exception, e:
