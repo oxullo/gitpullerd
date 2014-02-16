@@ -27,8 +27,8 @@ class App(object):
         self.__payload_queue = Queue.Queue()
 
         self.__init_git()
-        self.__repo.git.checkout(self.__cfg['target_branch'])
-        logger.info('Checked out branch %s' % self.__cfg['target_branch'])
+        self.__checkout()
+        self.__pull()
 
         self.__init_server()
 
@@ -59,6 +59,14 @@ class App(object):
             logger.warning('Target path not a git repo or invalid, cloning')
             self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
                     self.__cfg['target_path'])
+
+    def __checkout(self):
+        self.__repo.git.checkout(self.__cfg['target_branch'])
+        logger.info('Checked out branch: %s' % self.__repo.active_branch.name)
+
+    def __pull(self):
+        self.__repo.git.pull()
+        logger.info('Pulled up to revision: %s' % self.__repo.active_branch.commit)
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
@@ -100,7 +108,7 @@ class App(object):
                         urllib.unquote_plus(commit['message'])))
 
             try:
-                self.__repo.git.pull()
+                self.__pull()
             except Exception, e:
                 logger.error('Cannot pull: %s' % str(e))
             else:
