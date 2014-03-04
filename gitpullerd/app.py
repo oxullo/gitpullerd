@@ -3,10 +3,10 @@
 
 import sys
 import os
+import time
 import logging
 import shutil
 import Queue
-import urllib
 
 import git
 
@@ -14,8 +14,8 @@ import server
 import config
 
 import gitpullerd
-
 import spawner
+import payload_tester
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,10 @@ class App(object):
         logger.info('gitpullerd v%s starting up' % gitpullerd.__version__)
         self.__cfg = cfg
         self.__payload_queue = Queue.Queue()
+        self.__payload_tester = payload_tester.PayloadTester(
+                self.__cfg['payload_match_url'],
+                self.__cfg['payload_match_ref'],
+                self.__cfg['target_branch'])
 
         self.__init_git()
         self.__checkout()
@@ -46,6 +50,10 @@ class App(object):
                 sys.exit(0)
             except Queue.Empty:
                 pass
+            except Exception, e:
+                logger.error('Caught an exception while iterating loop:')
+                logger.exception(e, exc_info=sys.exc_info)
+                time.sleep(1)
 
     def __init_git(self):
         logger.info('Initializing target path: %s' % self.__cfg['target_path'])
@@ -81,32 +89,12 @@ class App(object):
             logger.fatal('No webhook/allowed_networks defined')
             sys.exit(1)
 
-    def __receive_payload(self, payload):
-        self.__payload_queue.put(payload)
+    def __receive_payload(self, payload_data):
+        self.__payload_queue.put(payload_data)
 
-    def __process_payload(self, payload):
-        logger.debug('Payload: %s' % payload)
-        if not 'repository' in payload and not 'url' in payload['repository']:
-            logger.error('Invalid payload, ignoring')
-            return
-
-        if (self.__cfg['payload_match_url']
-                and payload['repository']['url'].lower() !=
-                        self.__cfg['payload_match_url'].lower()):
-            logger.warning('Payload url matching failed (wanted=%s got=%s), ignoring' %
-                    (self.__cfg['payload_match_url'], payload['repository']['url']))
-            return
-
-        if self.__cfg['payload_match_ref'] == payload['ref']:
-            logger.info('Pulling repo %s (branch=%s)' % (payload['repository']['url'],
-                    self.__cfg['target_branch']))
-            for commit in payload['commits']:
-                logger.info('  %s [%s..] (%s): %s' % (
-                        commit['timestamp'],
-                        commit['id'][:12],
-                        commit['committer']['username'],
-                        urllib.unquote_plus(commit['message'])))
-
+    def __process_payload(self, payload_data):
+        if self.__payload_tester.process(payload_data):
+            logger.info('Payload filters match, pulling')
             try:
                 self.__pull()
             except Exception, e:
@@ -115,7 +103,7 @@ class App(object):
                 logger.info('Pull successful')
                 self.__run_action()
         else:
-            logger.info('Ignoring request (ref=%s)' % payload['ref'])
+            logger.info('Ignoring request')
 
     def __run_action(self):
         if self.__cfg['action_shell']:
