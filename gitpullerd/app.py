@@ -23,6 +23,7 @@ import time
 import logging
 import shutil
 import Queue
+import atexit
 
 import git
 
@@ -39,6 +40,8 @@ logger = logging.getLogger(__name__)
 class App(object):
     def __init__(self, cfg):
         logger.info('gitpullerd v%s starting up' % gitpullerd.__version__)
+        atexit.register(lambda: logger.info('shutting down'))
+
         self.__cfg = cfg
         self.__payload_queue = Queue.Queue()
         self.__payload_tester = payload_tester.PayloadTester(
@@ -61,7 +64,6 @@ class App(object):
                 payload = self.__payload_queue.get(True, 1)
                 self.__process_payload(payload)
             except KeyboardInterrupt:
-                logger.info('Terminating')
                 self.__server.shutdown()
                 sys.exit(0)
             except Queue.Empty:
