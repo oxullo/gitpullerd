@@ -23,9 +23,24 @@ __Note: python-daemon 1.5.5 is incompatible with lockfile 0.9.1__
 
 Git-core must be installed for python git package to work properly.
 
+# Installation
+
+    # git clone https://github.com/oxullo/gitpullerd
+    # python setup.py build && python setup.py install
+    # cp samples/etc/init.d/gitpullerd /etc/init.d/
+    # mkdir /etc/gitpullerd /var/log/gitpullerd /var/run/gitpullerd
+    # chown <user>:<group> /var/log/gitpullerd /var/run/gitpullerd
+    # cp samples/gitpullerd.ini.sample /etc/gitpullerd/gitpullerd.ini
+
+Edit /etc/gitpullerd/config.ini
+
+A debian-style default config file is added too and can be used instead of altering the init.d file:
+
+    # cp samples/etc/default/gitpullerd /etc/default/
+
 # Configuration
 
-A sample configuration can be found in _samples/config.ini_
+A sample configuration can be found in _samples/gitpullerd.ini.sample_
 
 Explanation of the config fields:
 
