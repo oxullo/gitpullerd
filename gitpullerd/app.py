@@ -50,8 +50,11 @@ class App(object):
                 self.__cfg['target_branch'])
 
         self.__init_git()
-        self.__checkout()
-        self.__pull()
+        if not self.__repo.bare:
+            self.__checkout()
+            self.__pull()
+        else:
+            self.__fetch()
 
         self.__init_server()
 
@@ -77,7 +80,7 @@ class App(object):
         logger.info('Initializing target path: %s' % self.__cfg['target_path'])
         try:
             self.__repo = git.Repo(self.__cfg['target_path'])
-            logger.info('Valid git repo found')
+            logger.info('Valid git repository found (bare=%s)' % self.__repo.bare)
         except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
             if os.path.exists(self.__cfg['target_path']):
                 shutil.rmtree(self.__cfg['target_path'])
@@ -93,6 +96,10 @@ class App(object):
     def __pull(self):
         self.__repo.git.pull()
         logger.info('Pulled up to revision: %s' % self.__repo.active_branch.commit)
+
+    def __fetch(self):
+        self.__repo.git.fetch()
+        logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
