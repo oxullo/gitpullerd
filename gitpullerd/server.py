@@ -47,9 +47,14 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         body = self.rfile.read(int(self.headers.getheader('content-length')))
         post_data = urlparse.parse_qs(body)
+        event = self.headers.getheader('X-Github-Event')
 
-        if not 'payload' in post_data:
-            logger.error('POST misses payload parameter')
+        if event == 'ping':
+            logger.info('Replying to ping')
+            self.send_response(200)
+            return
+        elif event == 'push' and not 'payload' in post_data:
+            logger.error('Push event POST misses payload parameter')
             self.send_response(400)
             return
 
