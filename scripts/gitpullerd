@@ -80,7 +80,7 @@ formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s
 if args.logfile is not None:
     handler = logging.FileHandler(args.logfile)
 else:
-    handler = logging.StreamHandler(stream=sys.stderr)
+    handler = logging.StreamHandler(sys.stderr)
 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
