@@ -39,6 +39,10 @@ A debian-style default config file is added too and can be used instead of alter
 
     # cp samples/etc/default/gitpullerd /etc/default/
 
+Automate the startup with:x
+
+    # update-rc.d gitpullerd defaults
+
 # Configuration
 
 A sample configuration can be found in _samples/gitpullerd.ini.sample_
@@ -61,12 +65,17 @@ Explanation of the config fields:
 It might be handy to test the configuration by using the _-f_ option while invoking
 gitpullerd for the first time.
 
-# Service startup
+# Github webhook
 
-A sample LSB-compliant SYSV script can be found in _samples/etc/init.d/gitpullerd_.
+Add a webhook that points to the public address of the server where gitpullerd runs,
+use the port specified in the configuration file:
 
-The script assumes that _/etc/default/gitpullerd_ is available and customised for the
-needs. A sample of this file can be found in _samples/etc/default/gitpullerd_
+    Payload URL: http://public.address:8888
+    Content-type: application/json
+
+# Testing
+
+A test script can be found in tests/client.py. It requires the python package requests.
 
 # Notes
 
