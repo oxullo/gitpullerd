@@ -119,13 +119,16 @@ class App(object):
 
     def __process_payload(self, payload_data):
         if self.__payload_tester.process(payload_data):
-            logger.info('Payload filters match, pulling')
+            logger.info('Payload filters match, updating')
             try:
-                self.__pull()
+                if not self.__repo.bare:
+                    self.__pull()
+                else:
+                    self.__fetch()
             except Exception, e:
-                logger.error('Cannot pull: %s' % str(e))
+                logger.error('Cannot update: %s' % str(e))
             else:
-                logger.info('Pull successful')
+                logger.info('Update successful')
                 self.__run_action()
         else:
             logger.info('Ignoring request')
