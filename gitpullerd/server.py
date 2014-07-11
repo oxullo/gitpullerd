@@ -61,7 +61,7 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             payload_str = body
         else:
             post_data = urlparse.parse_qs(body)
-            if not 'payload' in payload_str:
+            if not 'payload' in post_data:
                 logger.error('No payload available in the POST data')
                 self.send_response(400)
                 return
