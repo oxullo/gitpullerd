@@ -64,7 +64,7 @@ class PayloadTester(object):
             return False
 
         if self.match_ref == payload_data['ref']:
-            logger.info('Pulling repo %s '
+            logger.info('Bundled commits on %s '
                     '(branch=%s)' % (payload_data['repository']['url'],
                     self.target_branch))
 
@@ -82,3 +82,7 @@ class PayloadTester(object):
                             urllib.unquote_plus(commit['message'])))
 
             return True
+        else:
+            logger.info('Ref mismatch (wanted=%s got=%s)' % (self.match_ref, payload_data['ref']))
+            return False
+
