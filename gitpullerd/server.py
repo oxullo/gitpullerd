@@ -46,19 +46,28 @@ class WebHookReqHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         body = self.rfile.read(int(self.headers.getheader('content-length')))
-        post_data = urlparse.parse_qs(body)
         event = self.headers.getheader('X-Github-Event')
 
         if event == 'ping':
             logger.info('Replying to ping')
             self.send_response(200)
             return
-        elif event == 'push' and not 'payload' in post_data:
-            logger.error('Push event POST misses payload parameter')
-            self.send_response(400)
+        elif event != 'push':
+            logger.info('Invalid event: %s' % event)
+            self.send_response(500)
             return
 
-        payload_str = post_data['payload'][0]
+        if self.headers.getheader('content-type') == 'application/json':
+            payload_str = body
+        else:
+            post_data = urlparse.parse_qs(body)
+            if not 'payload' in payload_str:
+                logger.error('No payload available in the POST data')
+                self.send_response(400)
+                return
+
+            payload_str = post_data['payload'][0]
+
         try:
             payload = json.loads(payload_str)
         except ValueError, e:
