@@ -51,7 +51,10 @@ class App(object):
                 self.__cfg['source_branch'])
 
         self.__init_git()
-        self.__fetch()
+        try:
+            self.__fetch()
+        except git.exc.GitCommandError, e:
+            self.__fail('Cannot fetch from remote repository, error: %s' % e)
 
         self.__init_server()
 
@@ -107,13 +110,8 @@ class App(object):
         self.__repo.create_remote('origin', url=self.__cfg['source_url'])
 
     def __fetch(self):
-        try:
-            self.__repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
-                                                        self.__cfg['source_branch']))
-        except git.exc.GitCommandError, e:
-            self.__fail('Cannot fetch from remote repository, error: %s' % e)
-        else:
-            logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
+        self.__repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
+        logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
@@ -135,12 +133,9 @@ class App(object):
         if self.__payload_tester.process(payload_data):
             logger.info('Payload filters match, updating')
             try:
-                if not self.__repo.bare:
-                    self.__pull()
-                else:
-                    self.__fetch()
-            except Exception, e:
-                logger.error('Cannot update: %s' % str(e))
+                self.__fetch()
+            except git.exc.GitCommandError, e:
+                logger.error('Fetch failed: %s' % str(e))
             else:
                 logger.info('Update successful')
                 self.__run_action()
