@@ -48,7 +48,7 @@ class App(object):
         self.__payload_tester = payload_tester.PayloadTester(
                 self.__cfg['payload_match_url'],
                 self.__cfg['payload_match_ref'],
-                self.__cfg['target_branch'])
+                self.__cfg['source_branch'])
 
         self.__init_git()
         if not self.__repo.bare:
@@ -85,20 +85,28 @@ class App(object):
         sys.exit(1)
 
     def __init_git(self):
-        logger.info('Initializing target path: %s' % self.__cfg['target_path'])
+        logger.info('Initializing target path: %s' % self.__cfg['stage_path'])
         try:
-            self.__repo = git.Repo(self.__cfg['target_path'])
-            logger.info('Valid git repository found (bare=%s)' % self.__repo.bare)
+            self.__repo = git.Repo(self.__cfg['stage_path'])
         except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
-            if os.path.exists(self.__cfg['target_path']):
-                shutil.rmtree(self.__cfg['target_path'])
+            logger.warning('Stage path not a git repo or invalid, cloning')
+            self.__clean_clone()
+        else:
+            if not self.__repo.bare:
+                logger.warning('Stage path not a bare git repo, cloning clean')
+                self.__clean_clone()
+            else:
+                logger.info('Valid git repository found')
 
-            logger.warning('Target path not a git repo or invalid, cloning')
-            self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
-                    self.__cfg['target_path'], bare=True)
+    def __clean_clone(self):
+        if os.path.exists(self.__cfg['stage_path']):
+            shutil.rmtree(self.__cfg['stage_path'])
+
+        self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
+                                          self.__cfg['stage_path'], bare=True)
 
     def __checkout(self):
-        self.__repo.git.checkout(self.__cfg['target_branch'])
+        self.__repo.git.checkout(self.__cfg['source_branch'])
         logger.info('Checked out branch: %s' % self.__repo.active_branch.name)
 
     def __pull(self):

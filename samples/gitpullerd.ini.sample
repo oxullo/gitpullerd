@@ -1,9 +1,9 @@
 [source]
 url = https://github.com/oxullo/gitpullerd.git
+branch = master
 
-[target]
+[stage]
 path = /tmp/gitpullerd-stage
-branch = stage
 
 [webhook]
 listen_ip = 0.0.0.0
