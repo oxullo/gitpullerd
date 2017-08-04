@@ -43,6 +43,7 @@ class App(object):
         atexit.register(lambda: logger.info('shutting down'))
 
         self.__cfg = cfg
+        self.__server = None
         self.__payload_queue = Queue.Queue()
         self.__payload_tester = payload_tester.PayloadTester(
                 self.__cfg['payload_match_url'],
@@ -76,6 +77,13 @@ class App(object):
                 logger.exception(e, exc_info=sys.exc_info)
                 time.sleep(1)
 
+    def __fail(self, message):
+        logger.fatal(message)
+        if self.__server is not None:
+            self.__server.shutdown()
+
+        sys.exit(1)
+
     def __init_git(self):
         logger.info('Initializing target path: %s' % self.__cfg['target_path'])
         try:
@@ -94,12 +102,20 @@ class App(object):
         logger.info('Checked out branch: %s' % self.__repo.active_branch.name)
 
     def __pull(self):
-        self.__repo.git.pull()
-        logger.info('Pulled up to revision: %s' % self.__repo.active_branch.commit)
+        try:
+            self.__repo.git.pull()
+        except git.exc.GitCommandError, e:
+            self.__fail('Cannot pull from remote repository, error: %s' % e)
+        else:
+            logger.info('Pulled up to revision: %s' % self.__repo.active_branch.commit)
 
     def __fetch(self):
-        self.__repo.git.fetch()
-        logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
+        try:
+            self.__repo.git.fetch()
+        except git.exc.GitCommandError, e:
+            self.__fail('Cannot fetch from remote repository, error: %s' % e)
+        else:
+            logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
