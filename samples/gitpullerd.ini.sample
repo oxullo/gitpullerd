@@ -2,6 +2,9 @@
 url = https://github.com/oxullo/gitpullerd.git
 branch = master
 
+[target]
+url = https://example.com/git/gitpullerd.git
+
 [stage]
 path = /tmp/gitpullerd-stage
 

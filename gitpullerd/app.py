@@ -56,6 +56,7 @@ class App(object):
         except git.exc.GitCommandError, e:
             self.__fail('Cannot fetch from remote repository, error: %s' % e)
 
+        self.__push()
         self.__init_server()
 
     def run(self):
@@ -84,34 +85,25 @@ class App(object):
         sys.exit(1)
 
     def __init_git(self):
-        logger.info('Initializing target path: %s' % self.__cfg['stage_path'])
-        try:
-            self.__repo = git.Repo(self.__cfg['stage_path'])
-        except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
-            logger.warning('Stage path is not a git repo or invalid')
-            self.__init_new_stage()
-        else:
-            if not self.__repo.bare:
-                logger.warning('Stage path is not a bare git repo')
-                self.__init_new_stage()
-            else:
-                if not self.__repo.remotes.origin.exists():
-                    logger.warning('Stage path does not have a origin remote')
-                    self.__init_new_stage()
-                else:
-                    logger.info('Valid git repository found')
-
-    def __init_new_stage(self):
-        logger.info('Creating a clean stage repo')
+        logger.info('Initializing stage repository')
         if os.path.exists(self.__cfg['stage_path']):
             shutil.rmtree(self.__cfg['stage_path'])
 
-        self.__repo = git.Repo.init(self.__cfg['stage_path'], bare=True)
-        self.__repo.create_remote('origin', url=self.__cfg['source_url'])
+        self.__stage_repo = git.Repo.init(self.__cfg['stage_path'], bare=True)
+        self.__stage_repo.create_remote('origin', url=self.__cfg['source_url'])
+        self.__stage_repo.create_remote('target', url=self.__cfg['target_url'])
 
     def __fetch(self):
-        self.__repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
-        logger.info('Fetched up to revision: %s' % self.__repo.active_branch.commit)
+        self.__stage_repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
+                                                          self.__cfg['source_branch']))
+        logger.info('Fetched up to revision: %s' % self.__stage_repo.active_branch.commit)
+
+    def __push(self):
+        logger.info('Pushing to remote target')
+        pushinfo_set = self.__stage_repo.remotes.target.push()
+        if pushinfo_set:
+            for pushinfo in pushinfo_set:
+                logger.info('PUSH: ref=%s summary=%s' % (pushinfo.remote_ref_string, pushinfo.summary))
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
@@ -135,10 +127,15 @@ class App(object):
             try:
                 self.__fetch()
             except git.exc.GitCommandError, e:
-                logger.error('Fetch failed: %s' % str(e))
+                logger.error('Fetch from source failed: %s' % str(e))
             else:
-                logger.info('Update successful')
-                self.__run_action()
+                try:
+                    self.__push()
+                except git.exc.GitCommandError, e:
+                    logger.error('Push to target failed: %s' % str(e))
+                else:
+                    logger.info('Update successful')
+                    self.__run_action()
         else:
             logger.info('Ignoring request')
 
