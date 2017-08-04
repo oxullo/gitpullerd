@@ -51,11 +51,7 @@ class App(object):
                 self.__cfg['source_branch'])
 
         self.__init_git()
-        if not self.__repo.bare:
-            self.__checkout()
-            self.__pull()
-        else:
-            self.__fetch()
+        self.__fetch()
 
         self.__init_server()
 
@@ -89,37 +85,31 @@ class App(object):
         try:
             self.__repo = git.Repo(self.__cfg['stage_path'])
         except (git.exc.NoSuchPathError, git.exc.InvalidGitRepositoryError):
-            logger.warning('Stage path not a git repo or invalid, cloning')
-            self.__clean_clone()
+            logger.warning('Stage path is not a git repo or invalid')
+            self.__init_new_stage()
         else:
             if not self.__repo.bare:
-                logger.warning('Stage path not a bare git repo, cloning clean')
-                self.__clean_clone()
+                logger.warning('Stage path is not a bare git repo')
+                self.__init_new_stage()
             else:
-                logger.info('Valid git repository found')
+                if not self.__repo.remotes.origin.exists():
+                    logger.warning('Stage path does not have a origin remote')
+                    self.__init_new_stage()
+                else:
+                    logger.info('Valid git repository found')
 
-    def __clean_clone(self):
+    def __init_new_stage(self):
+        logger.info('Creating a clean stage repo')
         if os.path.exists(self.__cfg['stage_path']):
             shutil.rmtree(self.__cfg['stage_path'])
 
-        self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
-                                          self.__cfg['stage_path'], bare=True)
-
-    def __checkout(self):
-        self.__repo.git.checkout(self.__cfg['source_branch'])
-        logger.info('Checked out branch: %s' % self.__repo.active_branch.name)
-
-    def __pull(self):
-        try:
-            self.__repo.git.pull()
-        except git.exc.GitCommandError, e:
-            self.__fail('Cannot pull from remote repository, error: %s' % e)
-        else:
-            logger.info('Pulled up to revision: %s' % self.__repo.active_branch.commit)
+        self.__repo = git.Repo.init(self.__cfg['stage_path'], bare=True)
+        self.__repo.create_remote('origin', url=self.__cfg['source_url'])
 
     def __fetch(self):
         try:
-            self.__repo.git.fetch()
+            self.__repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
+                                                        self.__cfg['source_branch']))
         except git.exc.GitCommandError, e:
             self.__fail('Cannot fetch from remote repository, error: %s' % e)
         else:
