@@ -95,7 +95,7 @@ class App(object):
 
             logger.warning('Target path not a git repo or invalid, cloning')
             self.__repo = git.Repo.clone_from(self.__cfg['source_url'],
-                    self.__cfg['target_path'])
+                    self.__cfg['target_path'], bare=True)
 
     def __checkout(self):
         self.__repo.git.checkout(self.__cfg['target_branch'])
