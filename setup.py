@@ -14,5 +14,5 @@ setup(name='gitpullerd',
         ],
     },
     install_requires=['lockfile==0.8', 'netaddr>=0.7.7', 'python-daemon==1.5.5',
-            'GitPython==0.3.2.RC1', 'voluptuous==0.8.4'],
+            'GitPython==2.1.5', 'voluptuous==0.8.4'],
 )
