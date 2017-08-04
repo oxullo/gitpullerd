@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013-2014 OXullo Intersecans (x@brainrapers.org)
+# Copyright (C) 2013-2017 OXullo Intersecans (x@brainrapers.org)
 #
 # Foobar is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
