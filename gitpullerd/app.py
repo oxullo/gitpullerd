@@ -94,8 +94,16 @@ class App(object):
         self.__stage_repo.create_remote('target', url=self.__cfg['target_url'])
 
     def __fetch(self):
-        self.__stage_repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
-                                                          self.__cfg['source_branch']))
+        logger.info('Fetching from source')
+        fetchinfo_set = self.__stage_repo.remotes.origin.fetch('%s:%s' % (self.__cfg['source_branch'],
+                                                                      self.__cfg['source_branch']))
+
+        if fetchinfo_set:
+            for fetchinfo in fetchinfo_set:
+                logger.info('FETCH: ref=%s note=%s' % (fetchinfo.name,
+                                                       fetchinfo.note))
+        else:
+            logger.warning('No fetchinfo received, it might be an error')
         logger.info('Fetched up to revision: %s' % self.__stage_repo.active_branch.commit)
 
     def __push(self):
@@ -104,6 +112,8 @@ class App(object):
         if pushinfo_set:
             for pushinfo in pushinfo_set:
                 logger.info('PUSH: ref=%s summary=%s' % (pushinfo.remote_ref_string, pushinfo.summary))
+        else:
+            logger.warning('No pushinfo received, it might be an error')
 
     def __init_server(self):
         self.__server = server.create_server(self.__cfg['webhook_listen_ip'],
